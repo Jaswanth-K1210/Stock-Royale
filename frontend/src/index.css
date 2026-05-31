@@ -1,0 +1,184 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700;800&display=swap');
+@import "tailwindcss";
+
+/* ── THEME ─────────────────────────────────────── */
+@theme {
+  --color-bg: #000000;
+  --color-bg-card: #0F1115;
+  --color-bg-hover: #1E2229;
+  --color-border: #2B2F36;
+  --color-border-bright: #3D444D;
+  --color-text: #F5F8FA;
+  --color-text-dim: #8A939F;
+  --color-text-faint: #59616D;
+  
+  --color-primary: #00C805;
+  --color-primary-bright: #00FF06;
+  
+  /* Robinhood / Premium War Room Neon Accents */
+  --color-bull: #00C805;
+  --color-bear: #FF5000;
+  --color-neon-blue: #00C4FF;
+  --color-neon-purple: #9E5BFF;
+  
+  /* Aliases for old class names to avoid breaking other pages */
+  --color-gold: #00C4FF;
+  --color-gold-bright: #38bdf8;
+
+  --font-sans: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ── BASE ──────────────────────────────────────── */
+@layer base {
+  body {
+    @apply bg-bg text-text font-sans antialiased overflow-x-hidden;
+    background-image: radial-gradient(circle at center top, rgba(0, 196, 255, 0.03) 0%, transparent 60%);
+  }
+
+  ::selection {
+    @apply bg-primary/30 text-primary-bright;
+  }
+
+  /* Custom Scrollbar Terminal Style */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-bg;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-border-bright hover:bg-text-faint transition-colors rounded-full;
+  }
+}
+
+/* ── TERMINAL UI COMPONENTS ────────────────────────────────── */
+@layer components {
+  /* Sharp modular panels */
+  .term-panel {
+    @apply bg-bg-card border border-border flex flex-col shadow-lg rounded-2xl overflow-hidden;
+  }
+
+  .term-header {
+    @apply bg-[#15171C] text-text-dim text-xs font-sans font-medium px-4 py-2 flex justify-between items-center border-b border-border shrink-0;
+  }
+
+  .term-content {
+    @apply p-4 flex-1 overflow-auto;
+  }
+
+  /* Inputs & Buttons */
+  .term-input {
+    @apply bg-bg border border-border px-3 py-2 text-text font-sans focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all text-sm placeholder:text-text-faint w-full rounded-xl;
+  }
+
+  .term-btn {
+    @apply bg-transparent border border-border text-text font-sans font-medium text-sm px-4 py-2 hover:bg-bg-hover hover:border-text-dim transition-all cursor-pointer text-center focus:outline-none rounded-xl;
+  }
+  
+  .term-btn-bull {
+    @apply bg-bull/10 border border-bull/30 text-bull font-sans font-bold text-sm px-4 py-2 hover:bg-bull hover:text-black hover:border-bull focus:outline-none focus:ring-2 focus:ring-bull/40 transition-all cursor-pointer text-center rounded-xl;
+  }
+
+  .term-btn-bear {
+    @apply bg-bear/10 border border-bear/30 text-bear font-sans font-bold text-sm px-4 py-2 hover:bg-bear hover:text-black hover:border-bear focus:outline-none focus:ring-2 focus:ring-bear/40 transition-all cursor-pointer text-center rounded-xl;
+  }
+
+  /* Aliases for old classes (for backwards compatibility during migration) */
+  .glass-panel {
+    @apply bg-bg-card border border-border flex flex-col shadow-lg rounded-2xl;
+  }
+  .glass {
+    @apply bg-bg-card border border-border flex flex-col shadow-lg rounded-2xl;
+  }
+  .glass-hover {
+    @apply hover:border-primary transition-colors cursor-pointer;
+  }
+  .input-field {
+    @apply bg-bg border border-border px-3 py-2 text-text font-sans focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all text-sm placeholder:text-text-faint w-full rounded-xl;
+  }
+  .btn-primary {
+    @apply bg-primary border-none text-black font-sans font-bold text-sm px-4 py-2 hover:bg-primary-bright transition-all cursor-pointer text-center focus:outline-none rounded-xl;
+  }
+  .btn-success {
+    @apply bg-bull/10 border border-bull/30 text-bull font-sans font-bold text-sm px-4 py-2 hover:bg-bull hover:text-black hover:border-bull focus:outline-none focus:ring-2 focus:ring-bull/40 transition-all cursor-pointer text-center rounded-xl;
+  }
+  .btn-danger {
+    @apply bg-bear/10 border border-bear/30 text-bear font-sans font-bold text-sm px-4 py-2 hover:bg-bear hover:text-black hover:border-bear focus:outline-none focus:ring-2 focus:ring-bear/40 transition-all cursor-pointer text-center rounded-xl;
+  }
+}
+
+/* ── TERMINAL EFFECTS & MARQUEES ────────────────────────────────── */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.blink {
+  animation: blink-cursor 1s step-end infinite;
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 200, 5, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 200, 5, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 200, 5, 0); }
+}
+.pulse-bull {
+  border-radius: 50%;
+  animation: pulse-dot 2s infinite;
+  background-color: var(--color-bull);
+}
+
+.marquee-container {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+}
+.marquee-content {
+  display: inline-block;
+  animation: marquee-scroll 40s linear infinite;
+}
+@keyframes marquee-scroll {
+  0% { transform: translateX(100vw); }
+  100% { transform: translateX(-100%); }
+}
+
+/* ── WAR ROOM SCANLINES ────────────────────────────────── */
+.scanlines {
+  position: relative;
+}
+.scanlines::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0) 50%,
+    rgba(0,0,0,0.05) 50%,
+    rgba(0,0,0,0.05)
+  );
+  background-size: 100% 4px;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* ── FAB panel entrance ────────────────────────────────── */
+@keyframes fab-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-fab-in {
+  animation: fab-in 0.2s ease-out;
+}
+
