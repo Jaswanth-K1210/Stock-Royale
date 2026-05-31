@@ -6,21 +6,10 @@ const useAuthStore = create((set, get) => ({
   token: localStorage.getItem("token") || null,
   loading: false,
 
-  sendOtp: async (email) => {
+  register: async (username, email, password) => {
     set({ loading: true });
     try {
-      await api.post("/api/auth/send-otp", { email });
-      set({ loading: false });
-    } catch (err) {
-      set({ loading: false });
-      throw err;
-    }
-  },
-
-  register: async (username, email, password, otp) => {
-    set({ loading: true });
-    try {
-      const res = await api.post("/api/auth/register", { username, email, password, otp });
+      const res = await api.post("/api/auth/register", { username, email, password });
       const { user, token } = res.data;
       localStorage.setItem("user", JSON.stringify(user));
       localStorage.setItem("token", token);
