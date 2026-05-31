@@ -35,6 +35,8 @@ app.use(
     origin: (origin, callback) => {
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
+      } else if (origin.endsWith(".vercel.app")) {
+        callback(null, true);
       } else {
         callback(new Error(`CORS: origin ${origin} not allowed`));
       }
@@ -50,7 +52,13 @@ app.use(cookieParser());
 // ── Socket.io ─────────────────────────────────────────────
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+      }
+    },
     credentials: true,
   },
 });
