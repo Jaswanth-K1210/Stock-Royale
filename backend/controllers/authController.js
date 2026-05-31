@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 import User from "../models/User.js";
 import OTP from "../models/OTP.js";
 
@@ -42,23 +42,11 @@ export const sendOtp = async (req, res) => {
     await OTP.findOneAndDelete({ email });
     await OTP.create({ email, otp });
 
-    // Send email using Nodemailer
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-      const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        auth: {
-          user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
-        },
-        connectionTimeout: 10000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
-      });
-
-      const mailOptions = {
-        from: `"Stock Royale" <${process.env.EMAIL_USER}>`,
+    // Send email using Resend
+    if (process.env.RESEND_API_KEY) {
+      const resend = new Resend(process.env.RESEND_API_KEY);
+      const { error } = await resend.emails.send({
+        from: "Stock Royale <onboarding@resend.dev>",
         to: email,
         subject: "Your Stock Royale Verification Code",
         html: `
@@ -71,11 +59,9 @@ export const sendOtp = async (req, res) => {
             <p style="font-size: 14px; color: #c5c6c7; opacity: 0.7;">This code will expire in 5 minutes.</p>
           </div>
         `,
-      };
-
-      await transporter.sendMail(mailOptions);
+      });
+      if (error) throw new Error(error.message);
     } else {
-      // Fallback if env vars aren't set yet
       console.log(`\n==============================================`);
       console.log(`[MOCK EMAIL] OTP for ${email}: \x1b[32m${otp}\x1b[0m`);
       console.log(`==============================================\n`);
