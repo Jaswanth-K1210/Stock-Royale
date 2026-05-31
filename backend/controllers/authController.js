@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import User from "../models/User.js";
 import OTP from "../models/OTP.js";
 
@@ -42,11 +42,20 @@ export const sendOtp = async (req, res) => {
     await OTP.findOneAndDelete({ email });
     await OTP.create({ email, otp });
 
-    // Send email using Resend
-    if (process.env.RESEND_API_KEY) {
-      const resend = new Resend(process.env.RESEND_API_KEY);
-      const { error } = await resend.emails.send({
-        from: "Stock Royale <onboarding@resend.dev>",
+    // Send email via Brevo SMTP
+    if (process.env.BREVO_SMTP_USER && process.env.BREVO_SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        host: "smtp-relay.brevo.com",
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.BREVO_SMTP_USER,
+          pass: process.env.BREVO_SMTP_PASS,
+        },
+      });
+
+      await transporter.sendMail({
+        from: `"Stock Royale" <${process.env.BREVO_SMTP_USER}>`,
         to: email,
         subject: "Your Stock Royale Verification Code",
         html: `
@@ -60,7 +69,6 @@ export const sendOtp = async (req, res) => {
           </div>
         `,
       });
-      if (error) throw new Error(error.message);
     } else {
       console.log(`\n==============================================`);
       console.log(`[MOCK EMAIL] OTP for ${email}: \x1b[32m${otp}\x1b[0m`);
