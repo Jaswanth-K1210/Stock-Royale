@@ -62,13 +62,14 @@ export const BROADCAST_CHANNELS = [
     accent: "#0066CC",
   },
   // ── India (English) ─────────────────────────────────────────
-  // Indian channels rotate their live video id daily, so they have no pinned
-  // fallback — the resolver fetches the current stream on demand.
+  // Indian channels rotate their live video id daily; the resolver fetches the
+  // current stream on demand and falls back to liveVideoId when blocked.
   {
     key: "ndtv_profit",
     name: "NDTV Profit",
     market: "INDIA",
     channelId: "UC3uJIdRFTGgLWrUziaHbzrg",
+    liveVideoId: "i_8aSvFl2b8",
     accent: "#E20613",
   },
   {
