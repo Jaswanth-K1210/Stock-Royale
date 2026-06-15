@@ -50,10 +50,9 @@ export default function NewsChannels({ market = "USA", compact = false }) {
     if (!focused) return;
     const key = focused.key;
 
-    // If the channel config pins a specific live video, embed it directly and
-    // skip the resolver entirely — the user has explicitly told us this stream
-    // is the one to show for this channel.
-    if (focused.liveVideoId) {
+    // useStaticOnly channels are permanent 24/7 streams with a stable id —
+    // embed liveVideoId directly and skip the resolver entirely.
+    if (focused.useStaticOnly && focused.liveVideoId) {
       setLiveByChannel((s) => ({
         ...s,
         [key]: { videoId: focused.liveVideoId, isLive: true },
@@ -68,14 +67,23 @@ export default function NewsChannels({ market = "USA", compact = false }) {
           `/api/news/live?channel=${encodeURIComponent(focused.channelId)}`
         );
         if (!alive) return;
+        // Prefer the freshly-resolved stream; fall back to the pinned
+        // liveVideoId when the resolver is blocked (e.g. datacenter IP).
+        const videoId = res.data?.videoId || focused.liveVideoId || null;
         setLiveByChannel((s) => ({
           ...s,
-          [key]: res.data?.videoId
-            ? { videoId: res.data.videoId, isLive: !!res.data.isLive }
+          [key]: videoId
+            ? { videoId, isLive: res.data?.videoId ? !!res.data.isLive : true }
             : "none",
         }));
       } catch {
-        if (alive) setLiveByChannel((s) => ({ ...s, [key]: "none" }));
+        if (alive)
+          setLiveByChannel((s) => ({
+            ...s,
+            [key]: focused.liveVideoId
+              ? { videoId: focused.liveVideoId, isLive: true }
+              : "none",
+          }));
       }
     };
 

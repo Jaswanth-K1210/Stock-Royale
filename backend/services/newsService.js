@@ -258,27 +258,59 @@ const liveCache = new Map(); // channelId -> { value, expiresAt }
 const LIVE_CACHE_TTL_HIT_MS = 5 * 60 * 1000;
 const LIVE_CACHE_TTL_MISS_MS = 60 * 1000;
 
-export const resolveLiveVideo = async (channelId) => {
-  if (!channelId) return null;
-  const cached = liveCache.get(channelId);
-  if (cached && Date.now() < cached.expiresAt) return cached.value;
+// Pull the live video id out of a channel's /live page. When a channel is
+// offline, YouTube redirects /live to the channel home page (whose canonical
+// points at /channel/… not /watch?v=…), so we only trust a videoId that sits
+// inside the `videoDetails` block AND is flagged live. Falls back to the
+// canonical <link> only when it is also marked live. Mirrors the extraction
+// used by worldmonitor's youtube/live edge function.
+const extractLiveVideo = (html) => {
+  if (!html) return null;
 
-  const url = `https://www.youtube.com/channel/${channelId}/live`;
-  const html = await safeFetchText(`YT:${channelId}`, url, { headers: BROWSER_HEADERS });
-
-  let value = null;
-  if (html) {
-    const canonical = html.match(
-      /<link\s+rel="canonical"\s+href="https:\/\/www\.youtube\.com\/watch\?v=([\w-]+)"/i
-    );
-    const isLive = /"isLiveNow":true|"isLive":true/.test(html);
-    if (canonical) {
-      value = { videoId: canonical[1], isLive };
+  // 1) ytInitialPlayerResponse.videoDetails — the authoritative source.
+  const detailsIdx = html.indexOf('"videoDetails"');
+  if (detailsIdx !== -1) {
+    const block = html.slice(detailsIdx, detailsIdx + 5000);
+    const vid = block.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+    const live = /"isLiveContent":true/.test(block) || /"isLive":true/.test(block);
+    if (vid && live) {
+      const hls = html.match(/"hlsManifestUrl":"([^"]+)"/);
+      return {
+        videoId: vid[1],
+        isLive: true,
+        hlsUrl: hls ? hls[1].replace(/\\u0026/g, "&") : null,
+      };
     }
   }
 
+  // 2) Canonical watch link, but only if the page also reports a live stream.
+  const canonical = html.match(
+    /<link\s+rel="canonical"\s+href="https:\/\/www\.youtube\.com\/watch\?v=([a-zA-Z0-9_-]{11})"/i
+  );
+  if (canonical && /"isLiveNow":true|"isLive":true/.test(html)) {
+    return { videoId: canonical[1], isLive: true, hlsUrl: null };
+  }
+
+  return null;
+};
+
+export const resolveLiveVideo = async (channelOrHandle) => {
+  if (!channelOrHandle) return null;
+  const cached = liveCache.get(channelOrHandle);
+  if (cached && Date.now() < cached.expiresAt) return cached.value;
+
+  // Accept either a UC… channel id or an @handle. Handles resolve more
+  // reliably than channel ids on YouTube's /live route.
+  const path = channelOrHandle.startsWith("@")
+    ? channelOrHandle
+    : `channel/${channelOrHandle}`;
+  const url = `https://www.youtube.com/${path}/live`;
+  const html = await safeFetchText(`YT:${channelOrHandle}`, url, { headers: BROWSER_HEADERS });
+
+  const value = extractLiveVideo(html);
+
   const ttl = value ? LIVE_CACHE_TTL_HIT_MS : LIVE_CACHE_TTL_MISS_MS;
-  liveCache.set(channelId, { value, expiresAt: Date.now() + ttl });
+  liveCache.set(channelOrHandle, { value, expiresAt: Date.now() + ttl });
   return value;
 };
 

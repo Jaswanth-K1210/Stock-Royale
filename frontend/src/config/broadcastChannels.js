@@ -1,17 +1,43 @@
 // English-only business news YouTube channels with regular live broadcasts.
 // The backend's /api/news/live endpoint resolves each channel's current live
 // video ID (the legacy embed/live_stream?channel=… URL no longer reliably plays).
+//
+//   liveVideoId   — a known-good live video to fall back to when the resolver
+//                   can't reach YouTube (e.g. from a datacenter IP). Only worth
+//                   setting for true 24/7 streams whose id is stable.
+//   useStaticOnly — embed liveVideoId directly and skip the resolver entirely.
+//                   Use for stable 24/7 streams (Al Jazeera, Yahoo, Bloomberg).
+//
+// Al Jazeera and Yahoo Finance lead the list: both are permanent 24/7 streams
+// with stable ids, so they always play even when the resolver is blocked.
 export const BROADCAST_CHANNELS = [
+  // ── Always-on 24/7 streams (pinned, resolver-free) ───────────
+  {
+    key: "al_jazeera",
+    name: "Al Jazeera English",
+    market: "USA",
+    channelId: "UCNye-wNBqNL5ZzHSJj3l8Bg",
+    liveVideoId: "gCNeDWCI0vo",
+    useStaticOnly: true,
+    accent: "#FA9000",
+  },
+  {
+    key: "yahoo_finance",
+    name: "Yahoo Finance",
+    market: "USA",
+    channelId: "UCEAZeUIeJs0IjQiqTCdVSIg",
+    liveVideoId: "KQp-e_XQnDE",
+    useStaticOnly: true,
+    accent: "#7B61FF",
+  },
   // ── Global / USA ─────────────────────────────────────────────
-  // liveVideoId, when set, embeds that exact stream and skips the auto-resolver.
-  // Use it to pin a channel to a specific known-good live URL. When that stream
-  // ends, clear liveVideoId and the resolver will take over again.
   {
     key: "bloomberg",
     name: "Bloomberg Television",
     market: "USA",
     channelId: "UCIALMKvObZNtJ6AmdCLP7Lg",
     liveVideoId: "iEpJwprxDdk",
+    useStaticOnly: true,
     accent: "#FE8C00",
   },
   {
@@ -20,14 +46,6 @@ export const BROADCAST_CHANNELS = [
     market: "USA",
     channelId: "UCrp_UI8XtuYfpiqluWLD7Lw",
     accent: "#005EB8",
-  },
-  {
-    key: "yahoo_finance",
-    name: "Yahoo Finance",
-    market: "USA",
-    channelId: "UCEAZeUIeJs0IjQiqTCdVSIg",
-    liveVideoId: "KQp-e_XQnDE",
-    accent: "#7B61FF",
   },
   {
     key: "reuters",
@@ -43,21 +61,14 @@ export const BROADCAST_CHANNELS = [
     channelId: "UCCXoCcu9Rp7NPbTzIvogpZg",
     accent: "#0066CC",
   },
-  {
-    key: "al_jazeera",
-    name: "Al Jazeera English",
-    market: "USA",
-    channelId: "UCNye-wNBqNL5ZzHSJj3l8Bg",
-    liveVideoId: "gCNeDWCI0vo",
-    accent: "#FA9000",
-  },
   // ── India (English) ─────────────────────────────────────────
+  // Indian channels rotate their live video id daily, so they have no pinned
+  // fallback — the resolver fetches the current stream on demand.
   {
     key: "ndtv_profit",
     name: "NDTV Profit",
     market: "INDIA",
     channelId: "UC3uJIdRFTGgLWrUziaHbzrg",
-    liveVideoId: "02I30AzaljY",
     accent: "#E20613",
   },
   {
@@ -65,7 +76,6 @@ export const BROADCAST_CHANNELS = [
     name: "CNBC-TV18",
     market: "INDIA",
     channelId: "UCmRbHAgG2k2vDUvb3xsEunQ",
-    liveVideoId: "P857H4ej-MQ",
     accent: "#FFB400",
   },
   {

@@ -35,20 +35,22 @@ router.get("/feed", async (req, res) => {
   }
 });
 
-// GET /api/news/live?channel=<channelId>
+// GET /api/news/live?channel=<channelId|@handle>
 // Resolves a YouTube channel's current live videoId (the legacy
 // embed/live_stream?channel= URL no longer reliably resolves to a stream).
 router.get("/live", async (req, res) => {
   try {
-    const channelId = String(req.query.channel || "").trim();
-    if (!/^UC[\w-]{20,}$/.test(channelId)) {
+    const channel = String(req.query.channel || "").trim();
+    const isHandle = /^@[\w.-]{2,}$/.test(channel);
+    const isChannelId = /^UC[\w-]{20,}$/.test(channel);
+    if (!isHandle && !isChannelId) {
       return res.status(400).json({ error: "invalid channel id" });
     }
-    const result = await resolveLiveVideo(channelId);
+    const result = await resolveLiveVideo(channel);
     if (!result?.videoId) {
-      return res.json({ channelId, videoId: null, isLive: false });
+      return res.json({ channel, videoId: null, isLive: false });
     }
-    res.json({ channelId, ...result });
+    res.json({ channel, ...result });
   } catch (err) {
     logger.error("news/live error: " + err.message);
     res.status(500).json({ error: err.message });
